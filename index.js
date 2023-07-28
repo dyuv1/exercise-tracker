@@ -47,7 +47,7 @@ app.post('/api/users', async (req, res) => {
 
 app.get('/api/users', async (req, res) => {
   const users = await User.find()
-  res.json({ users })
+  res.send(users)
 })
 
 app.post('/api/users/:_id/exercises', async (req, res) => {
@@ -64,7 +64,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     date,
     userId
   })
-  res.json({
+  res.send({
     username,
     description,
     duration,
