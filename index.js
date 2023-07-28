@@ -19,7 +19,7 @@ db.connection.once('open', () => {
 db.connection.on('error', console.error.bind(console, 'connection error:'))
 const userSchema = new db.Schema({
   username: String
-}, { versionKey: false } )
+}, { versionKey: false })
 const User = db.model("User", userSchema)
 const exerciseSchema = new db.Schema({
   username: String,
@@ -36,10 +36,16 @@ const exerciseSchema = new db.Schema({
 })
 const Exercise = db.model("Exercise", exerciseSchema)
 
+// app.get('/api/deleteusers', async (req, res) => {
+//   await Exercise.deleteMany({})
+//   await User.deleteMany({})
+//   res.send('deleted')
+// })
+
 app.post('/api/users', async (req, res) => {
   const username = req.body.username
   const foundUser = await User.findOne({ username })
-  if(foundUser) { res.json(foundUser) } else {
+  if (foundUser) { res.json(foundUser) } else {
     const newUser = await User.create({ username })
     res.json(newUser)
   }
@@ -52,12 +58,12 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users/:_id/exercises', async (req, res) => {
   let { description, duration, date } = req.body
-  const userId = req.body[':_id']
+  const userId = req.params._id
   const userObject = await User.findById(userId)
   let username
-  if(!userObject) { res.json({ message: "No user goes by that id" }) } else { ({ username } = userObject) }
-  if(!date) { date = new Date() } else { date = new Date(date) }
-  const newExercise = await Exercise.create({
+  if (!userObject) { res.json({ message: "No user goes by that id" }); return } else { ({ username } = userObject) }
+  if (!date) { date = new Date() } else { date = new Date(date) }
+  await Exercise.create({
     username,
     description,
     duration,
@@ -67,7 +73,7 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   res.send({
     username,
     description,
-    duration,
+    duration: parseInt(duration),
     date: date.toDateString(),
     _id: userId
   })
@@ -76,17 +82,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 app.get('/api/users/:_id/logs', async (req, res) => {
   const { _id } = req.params
   let { from, to, limit } = req.query
-  let date
   const filter = { userId: _id }
   const dateFilter = {}
-  if(from) { dateFilter['$gte'] = new Date(from) }
-  if(to) { dateFilter['$lte'] = new Date(to) }
-  if(from || to) { filter.date = dateFilter }
-  if(!limit) { limit = 1000 }
+  if (from) { dateFilter['$gte'] = new Date(from) }
+  if (to) { dateFilter['$lte'] = new Date(to) }
+  if (from || to) { filter.date = dateFilter }
+  if (!limit) { limit = 1000 }
   const userObject = await User.findById(_id)
   let username
-  if(!userObject) { res.json({ message: "No user goes by that id" }) } else { ({ username } = userObject) }
-  const  exercises = await Exercise.find(filter).limit(limit)
+  if (!userObject) { res.json({ message: "No user goes by that id" }); return } else { ({ username } = userObject) }
+  const exercises = await Exercise.find(filter).limit(limit)
   const log = exercises.map(e => {
     return {
       description: e.description,
@@ -94,7 +99,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       date: e.date.toDateString()
     }
   })
-  res.json({
+  res.send({
     username,
     count: exercises.length,
     _id,
